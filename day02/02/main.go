@@ -15,7 +15,6 @@ var data string
 
 var delimeter = " "
 
-// NON WORKING DRAFT
 func main() {
 	safeReports := 0
 	scanner := bufio.NewScanner(strings.NewReader(data))
@@ -23,38 +22,18 @@ func main() {
 	// line by line
 	for scanner.Scan() {
 		report := convertToIntSlice(strings.Split(scanner.Text(), delimeter))
-		numberCache := -1 // init -1 du to no negative values in the reports
-		var safeReport bool
-		levelRemoved := false
 
-		// entry by entry
-		for i := 0; i < len(report); i++ {
-			number := report[i]
-			if numberCache == -1 {
-				numberCache = number
-				continue
-			}
-			diff := math.Abs(float64(number - numberCache))
-			if diff < 1 || diff > 3 {
-				if levelRemoved {
-					safeReport = false
-					break
-				}
-				// remove last elemt before error detection
-				report = slices.Delete(report, i, i+1)
-				i-- // Important! Decrement index!
-				levelRemoved = true
-				numberCache = -1 // invalidate cache
-				continue
-			}
-			numberCache = number
-			safeReport = true
-		}
-		if reportNotAscOrDesc(report) {
-			safeReport = false
-		}
-		if safeReport {
+		if ascOrDesc(report) && correctLevelDistance(report) {
 			safeReports++
+			continue
+		}
+		for i := 0; i < len(report); i++ {
+			permutation := slices.Clone(report)
+			permutation = slices.Delete(permutation, i, i+1)
+			if ascOrDesc(permutation) && correctLevelDistance(permutation) {
+				safeReports++
+				break
+			}
 		}
 	}
 
@@ -62,25 +41,41 @@ func main() {
 	fmt.Println("The number of safe reports is: ", safeReports)
 }
 
-func reportNotAscOrDesc(report []int) bool {
+func ascOrDesc(report []int) bool {
 	if len(report) < 2 {
-		return false // A single element is either ascending or descending
+		return true // A single element is either ascending or descending
 	}
 
 	isAscending := report[0] < report[1]
 	compare := func(a, b int) bool {
 		if isAscending {
-			return b <= a
+			return a <= b
 		}
-		return b >= a
+		return a >= b
 	}
 
 	for i := 1; i < len(report); i++ {
-		if compare(report[i-1], report[i]) {
-			return true
+		if !compare(report[i-1], report[i]) {
+			return false
 		}
 	}
-	return false
+	return true
+}
+
+func correctLevelDistance(report []int) bool {
+	cache := -1
+	for _, number := range report {
+		if cache == -1 {
+			cache = number
+			continue
+		}
+		diff := math.Abs(float64(number - cache))
+		if diff < 1 || diff > 3 {
+			return false
+		}
+		cache = number
+	}
+	return true
 }
 
 func convertToIntSlice(data []string) []int {
