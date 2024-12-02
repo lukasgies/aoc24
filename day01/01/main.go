@@ -48,7 +48,7 @@ func main() {
 	totalDistance := 0
 	if len(leftList) == len(rightList) {
 
-		for i, _ := range leftList {
+		for i := range leftList {
 			distance := math.Abs(float64(leftList[i] - rightList[i]))
 			totalDistance = totalDistance + int(distance)
 		}
